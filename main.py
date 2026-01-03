@@ -3,9 +3,15 @@ import time
 from pathlib import Path
 import json
 import slugify
+import pandas as pd
 
+#
+# CONFIGURATION NEEDED
+# Set these to True before launching
+# Please do not abuse of this tool
+#
 UPDATE = False
-PROCESS = True
+PROCESS = False
 
 FEEZERO_BASEURL = "https://www.directa.it/api/v1/tabelle/feezero"
 PAC_BASEURL = "https://www.directa.it/api/v1/tabelle/pac"
@@ -71,7 +77,17 @@ def process():
     with open(OUT_DIR / f"{PAC_BASENAME}.json", "w") as f:
         json.dump(pac_entries, f)
 
+    # convert to csv
+    with open(OUT_DIR / f"{FEEZERO_BASENAME}.json", "r") as f:
+        df = pd.read_json(f)
+        df.to_csv(OUT_DIR / f"{FEEZERO_BASENAME}.csv", index=False)
+    with open(OUT_DIR / f"{PAC_BASENAME}.json", "r") as f:
+        df = pd.read_json(f)
+        df.to_csv(OUT_DIR / f"{PAC_BASENAME}.csv", index=False)
+
 if __name__ == "__main__":
+    if not UPDATE and not PROCESS:
+        print("Please update variables at the top of main.py.\nThis is a safety check to avoid abuses. Cheers️ ❤️")
     if UPDATE:
         print("Updating...")
         update()
