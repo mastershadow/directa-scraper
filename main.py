@@ -11,12 +11,13 @@ import pandas as pd
 # Please do not abuse of this tool
 #
 UPDATE = False
-PROCESS = False
+PROCESS = True
 
 FEEZERO_BASEURL = "https://www.directa.it/api/v1/tabelle/feezero"
 PAC_BASEURL = "https://www.directa.it/api/v1/tabelle/pac"
 DATA_DIR = Path(__file__).parent / "data"
 OUT_DIR = Path(__file__).parent / "out"
+ETF_LIST = DATA_DIR / "etf_list.json"
 
 SLEEP_TIME = 1
 FEEZERO_BASENAME = "feezero"
@@ -52,7 +53,15 @@ def update():
             json.dump(datareq.json(), f)
 
 def process():
-    global DATA_DIR
+    global DATA_DIR, ETF_LIST
+
+    etfs = {}
+    if ETF_LIST.exists():
+        with open(ETF_LIST, "r") as f:
+            etf_list_data = json.load(f)
+            for entry in etf_list_data:
+                etfs[entry['isin']] = entry
+
     # process feezero
     feezero_entries = []
     with open(DATA_DIR / f"{FEEZERO_BASENAME}.json", "r") as f:
@@ -64,6 +73,8 @@ def process():
                 data_file_content = json.load(data_file)
             for entry in data_file_content:
                 entry['Emittente'] = emitter_name
+                if entry['Isin'] in etfs:
+                    entry['Categoria'] = etfs[entry['Isin']]['category']
             feezero_entries = feezero_entries + data_file_content
     with open(OUT_DIR / f"{FEEZERO_BASENAME}.json", "w") as f:
         json.dump(feezero_entries, f)
@@ -76,6 +87,9 @@ def process():
             emitter = slugify.slugify(entry['EMIT'])
             with open(DATA_DIR / f"{PAC_BASENAME}-{emitter}.json", "r") as data_file:
                 data_file_content = json.load(data_file)
+                for entry in data_file_content:
+                    if entry['Isin'] in etfs:
+                        entry['Categoria'] = etfs[entry['Isin']]['category']
             pac_entries = pac_entries + data_file_content
     with open(OUT_DIR / f"{PAC_BASENAME}.json", "w") as f:
         json.dump(pac_entries, f)
