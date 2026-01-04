@@ -58,9 +58,12 @@ def process():
     with open(DATA_DIR / f"{FEEZERO_BASENAME}.json", "r") as f:
         data = json.load(f)
         for entry in data:
-            emitter = slugify.slugify(entry['EMIT'])
+            emitter_name = entry['EMIT']
+            emitter = slugify.slugify(emitter_name)
             with open(DATA_DIR / f"{FEEZERO_BASENAME}-{emitter}.json", "r") as data_file:
                 data_file_content = json.load(data_file)
+            for entry in data_file_content:
+                entry['Emittente'] = emitter_name
             feezero_entries = feezero_entries + data_file_content
     with open(OUT_DIR / f"{FEEZERO_BASENAME}.json", "w") as f:
         json.dump(feezero_entries, f)
