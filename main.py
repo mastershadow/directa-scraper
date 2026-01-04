@@ -52,6 +52,14 @@ def update():
         with open(DATA_DIR / f"{PAC_BASENAME}-{slugify.slugify(emitter)}.json", "w") as f:
             json.dump(datareq.json(), f)
 
+def is_equity(entry):
+    if "Categoria" not in entry:
+        return False
+    c = entry['Categoria']
+    if c is None:
+        return False
+    return "equity" in c.lower()
+
 def process():
     global DATA_DIR, ETF_LIST
 
@@ -94,10 +102,20 @@ def process():
     with open(OUT_DIR / f"{PAC_BASENAME}.json", "w") as f:
         json.dump(pac_entries, f)
 
+    # equity only
+    with open(OUT_DIR / f"{FEEZERO_BASENAME}.json", "r") as f:
+        fzero = json.load(f)
+        equity = list(filter(lambda e: is_equity(e), fzero))
+        with open(OUT_DIR / f"{FEEZERO_BASENAME}-equity.json", "w") as f:
+            json.dump(equity, f)
+
     # convert to csv
     with open(OUT_DIR / f"{FEEZERO_BASENAME}.json", "r") as f:
         df = pd.read_json(f)
         df.to_csv(OUT_DIR / f"{FEEZERO_BASENAME}.csv", index=False)
+    with open(OUT_DIR / f"{FEEZERO_BASENAME}-equity.json", "r") as f:
+        df = pd.read_json(f)
+        df.to_csv(OUT_DIR / f"{FEEZERO_BASENAME}-equity.csv", index=False)
     with open(OUT_DIR / f"{PAC_BASENAME}.json", "r") as f:
         df = pd.read_json(f)
         df.to_csv(OUT_DIR / f"{PAC_BASENAME}.csv", index=False)
